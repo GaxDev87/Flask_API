@@ -3,13 +3,36 @@ name: SecurityPipeline
 on: [push]
 
 jobs:
-  horusec-security:
-    name: horusec-security
-    runs-on: ubuntu-latest
-    steps:
-    - name: Check out code
-      uses: actions/checkout@v2
-    - name: Running Horusec Security
-      run: |
-        curl -fsSL https://horusec.io/bin/install.sh | bash
-        horusec start -p="./" -e="true"
+  # Define your pipeline stages
+      horusec_analyzer:
+        # Run on the latest stable version of Ubuntu
+        runs-on: ubuntu-latest
+        # Define your job name
+        name: Run Horusec Analysis
+        # Define steps to execute
+        steps:
+          # Checkout your repository
+          - name: Checkout code
+            uses: actions/checkout@v2
+      
+          # Set up Go environment to run Horusec
+          - name: Set up Go environment
+            uses: actions/setup-go@v2
+            with:
+              go-version: '1.17'
+      
+          # Install Horusec CLI
+          - name: Install Horusec CLI
+            run: |
+              curl -fsSL https://raw.githubusercontent.com/ZupIT/horusec-cli/master/install.sh | bash -s -- -b /usr/local/bin v1.9.0
+      
+          # Run Horusec scan with default settings
+          - name: Run Horusec scan
+            run: horusec start -p .
+      
+          # Upload Horusec report as artifact
+          - name: Upload Horusec report
+            uses: actions/upload-artifact@v2
+            with:
+              name: horusec-report
+              path: .horusec/analysis.json
